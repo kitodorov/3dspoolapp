@@ -8,6 +8,7 @@ A tiny local-only filament inventory app.
 - Quick adjustments: “Used” (-g) and “Refill” (+g)
 - Filter/search inventory
 - Data stored in `localStorage` (no backend)
+- Added Merge function to merge old JSONs
 
 ## Dev setup
 ```bash

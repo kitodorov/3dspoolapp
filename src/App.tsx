@@ -7,6 +7,8 @@ import { StatPills } from "./components/StatPills";
 import { InventoryList } from "./components/InventoryList";
 import { SpoolFormModal } from "./components/SpoolFormModal";
 import { SpoolDetailsModal } from "./components/SpoolDetailsModal";
+import { DataTools } from "./components/DataTools";
+
 
 type Filters = {
   q: string;
@@ -59,6 +61,19 @@ export default function App() {
     saveData(next);
   };
 
+
+  const handleApplyData = (nextData: typeof data) => {
+  setData(nextData);
+  saveData(nextData);
+
+  // Close modals just in case (prevents stale selections)
+  setFormOpen(false);
+  setDetailsOpen(false);
+  setSelected(null);
+  setEditing(null);
+  };
+
+
   const handleAdd = () => {
     setFormMode("create");
     setEditing(null);
@@ -105,7 +120,7 @@ export default function App() {
   return (
     <div className="container">
       <Header onAdd={handleAdd} />
-
+      <DataTools data={data} onApply={handleApplyData} />
       <div className="card" style={{ marginBottom: 12 }}>
         <div className="grid3">
           <div>
