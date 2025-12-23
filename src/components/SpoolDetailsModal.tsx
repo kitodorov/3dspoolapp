@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Spool } from "../types/filament";
 import { syncRemainingFromG } from "../lib/utils";
 import { formatDate } from "../lib/utils";
+import { ColorSwatch } from "./ColorSwatch";
 
 type Props = {
   open: boolean;
@@ -52,11 +53,17 @@ export function SpoolDetailsModal({ open, spool, onClose, onEdit, onDelete, onUp
       <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="modalHeader">
           <div>
-            <div style={{ fontWeight: 900, fontSize: 16 }}>{safe.name}</div>
+            {/* Title row with swatch */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <ColorSwatch color={safe.color} size={16} />
+              <div style={{ fontWeight: 900, fontSize: 16 }}>{safe.name}</div>
+            </div>
+
             <div className="subtle">
               {safe.material} • {safe.color} • {safe.diameterMm}mm • cap {Math.round(safe.capacityG)}g
             </div>
           </div>
+
           <button className="btn" onClick={onClose}>Close</button>
         </div>
 
