@@ -1,15 +1,25 @@
 import type { Spool } from "../types/filament";
 import { groupSpools } from "../lib/grouping";
 import { ColorSwatch } from "./ColorSwatch";
+import type { Material } from "../types/filament";
 
 type Props = {
   spools: Spool[];
   onOpen: (spool: Spool) => void;
+  onDeleteGroup?: (key: GroupKey) => void;
   onAddAnother?: (
   prefill: Partial<Pick<Spool, "brand" | "material" | "color" | "diameterMm" | "capacityG">>,
   qty?: number
 ) => void;
 };
+
+export type GroupKey = {
+  brand?: string;
+  material: Material;
+  color: string;
+  diameterMm: 1.75 | 2.85;
+};
+
 
 function pctBar(pct: number) {
   const clamped = Math.max(0, Math.min(100, pct));
@@ -28,7 +38,7 @@ function pctBar(pct: number) {
   );
 }
 
-export function InventoryList({ spools, onOpen, onAddAnother }: Props) {
+export function InventoryList({ spools, onOpen, onAddAnother, onDeleteGroup }: Props) {
   if (spools.length === 0) {
     return (
       <div className="card">
@@ -104,6 +114,30 @@ export function InventoryList({ spools, onOpen, onAddAnother }: Props) {
                     >
                       + Add
                     </button>
+                    {onDeleteGroup ? (
+                    <button
+                      className="btn danger"
+                      type="button"
+                      title="Delete entire group"
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        const ok = confirm(
+                          `Delete this entire group?\n\n${g.brandLabel} • ${g.material} • ${g.color} • ${g.diameterMm}mm\n\nThis will delete ${g.count} spool(s). This cannot be undone.`
+                        );
+                        if (!ok) return;
+
+                        onDeleteGroup({
+                          brand: g.brandLabel === "(no brand)" ? undefined : g.brandLabel,
+                          material: g.material as Material,
+                          color: g.color,
+                          diameterMm: g.diameterMm as 1.75 | 2.85,
+                        });
+                      }}
+                    >
+                      🗑️ Delete
+                    </button>
+                  ) : null}
                   </div>
                 ) : null}
               </div>

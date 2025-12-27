@@ -52,6 +52,19 @@ export function SpoolDetailsModal({ open, spool, onClose, onEdit, onDelete, onUp
     const now = new Date().toISOString();
     onUpdate({ ...safe, remainingG: 0, remainingPct: 0, status: "EMPTY", updatedAt: now });
   };
+  const toggleUseStorage = () => {
+  const now = new Date().toISOString();
+
+  if (safe.status === "IN_STORAGE") {
+    onUpdate({ ...safe, status: "IN_USE", updatedAt: now });
+    return;
+  }
+
+  if (safe.status === "IN_USE") {
+    onUpdate({ ...safe, status: "IN_STORAGE", updatedAt: now });
+    return;
+  }
+  };
 
   return (
     <div className="modalOverlay" onMouseDown={onClose}>
@@ -108,12 +121,17 @@ export function SpoolDetailsModal({ open, spool, onClose, onEdit, onDelete, onUp
             {safe.brand ? <span className="badge">{safe.brand}</span> : null}
           </div>
 
-          <div className="row">
+          <div className="row" style={{ gap: 10 }}>
+            {(safe.status === "IN_STORAGE" || safe.status === "IN_USE") ? (
+              <button className="btn" onClick={toggleUseStorage}>
+                {safe.status === "IN_STORAGE" ? "Move to IN_USE" : "Move to IN_STORAGE"}
+              </button>
+            ) : null}
+
             <button className="btn" onClick={() => onEdit(safe)}>Edit</button>
             <button className="btn danger" onClick={() => onDelete(safe.id)}>Delete</button>
           </div>
         </div>
-
         {safe.notes ? (
           <div className="card" style={{ marginTop: 12 }}>
             <div style={{ fontWeight: 800, marginBottom: 6 }}>Notes</div>

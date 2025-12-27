@@ -99,8 +99,24 @@ export default function App() {
   setPrefill(p);
   setFormOpen(true);
   setInitialQty(Math.max(1, Math.floor(qty || 1)));
-};
+  };
 
+  const handleDeleteGroup = (key: { brand?: string; material: Material; color: string; diameterMm: 1.75 | 2.85 }) => {
+  const matches = (s: Spool) =>
+    (s.brand ?? "") === (key.brand ?? "") &&
+    s.material === key.material &&
+    s.color === key.color &&
+    s.diameterMm === key.diameterMm;
+
+  const next = data.spools.filter((s) => !matches(s));
+  persist(next);
+
+  // If the currently opened details spool belonged to this group, close it
+  if (selected && matches(selected)) {
+    setDetailsOpen(false);
+    setSelected(null);
+  }
+  };
 
   const handleOpenDetails = (spool: Spool) => {
     setSelected(spool);
@@ -250,6 +266,7 @@ export default function App() {
         spools={filtered}
         onOpen={handleOpenDetails}
         onAddAnother={handleAddAnother}
+        onDeleteGroup={handleDeleteGroup}
       />
 
 
