@@ -150,7 +150,7 @@ export default function App() {
       s.diameterMm === incoming.diameterMm;
     const groupSpools = data.spools.filter(sameGroup);
     const baseName = canonicalName(incoming.brand, incoming.material, incoming.color);
-    const shouldSuffix = baseName.length > 0; 
+    // const shouldSuffix = baseName.length > 0; 
     const startIndex = nextNameIndex(groupSpools, baseName);
     const created: Spool[] = Array.from({ length: n }, (_, i) => ({
       ...incoming,
