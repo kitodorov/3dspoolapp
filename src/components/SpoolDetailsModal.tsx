@@ -38,7 +38,12 @@ export function SpoolDetailsModal({ open, spool, onClose, onEdit, onDelete, onUp
       remainingG: synced.remainingG,
       remainingPct: synced.remainingPct,
       updatedAt: now,
-      status: synced.remainingG === 0 ? "EMPTY" : safe.status === "EMPTY" ? "ACTIVE" : safe.status,
+      status:
+        synced.remainingG === 0
+          ? "EMPTY"
+          : safe.status === "EMPTY"
+            ? "IN_STORAGE"
+            : safe.status,
     };
     onUpdate(next);
   };

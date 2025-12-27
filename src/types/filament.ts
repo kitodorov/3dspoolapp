@@ -8,7 +8,7 @@ export type Material =
   | "PC"
   | "OTHER";
 
-export type SpoolStatus = "ACTIVE" | "EMPTY" | "ARCHIVED";
+export type SpoolStatus = "IN_USE" | "IN_STORAGE" | "EMPTY";
 
 export type Spool = {
   id: string;

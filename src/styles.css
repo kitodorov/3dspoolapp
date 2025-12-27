@@ -109,6 +109,10 @@ a { color: inherit; }
   vertical-align: middle;
 }
 
+.table tbody tr {
+  height: 56px; /* adjust if you want a bit taller/shorter */
+}
+
 .pill {
   display: inline-flex;
   align-items: center;
@@ -123,6 +127,8 @@ a { color: inherit; }
 
 .badge {
   display: inline-flex;
+  align-items: center;
+  line-height: 1;
   padding: 4px 8px;
   border-radius: 999px;
   font-size: 12px;

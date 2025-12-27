@@ -5,6 +5,10 @@ import { ColorSwatch } from "./ColorSwatch";
 type Props = {
   spools: Spool[];
   onOpen: (spool: Spool) => void;
+  onAddAnother?: (
+  prefill: Partial<Pick<Spool, "brand" | "material" | "color" | "diameterMm" | "capacityG">>,
+  qty?: number
+) => void;
 };
 
 function pctBar(pct: number) {
@@ -24,7 +28,7 @@ function pctBar(pct: number) {
   );
 }
 
-export function InventoryList({ spools, onOpen }: Props) {
+export function InventoryList({ spools, onOpen, onAddAnother }: Props) {
   if (spools.length === 0) {
     return (
       <div className="card">
@@ -65,9 +69,45 @@ export function InventoryList({ spools, onOpen }: Props) {
 
               <div className="row" style={{ gap: 10 }}>
                 {pctBar(g.avgRemainingPct)}
+                {onAddAnother ? (
+                  <div className="row" style={{ gap: 8 }}>
+                    <input
+                      className="input"
+                      type="number"
+                      min={1}
+                      max={50}
+                      defaultValue={1}
+                      style={{ width: 90 }}
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      id={`qty-${g.key}`}
+                    />
+                    <button
+                      className="btn"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const el = document.getElementById(`qty-${g.key}`) as HTMLInputElement | null;
+                        const qty = Math.max(1, Math.min(50, Math.floor(Number(el?.value || 1))));
+                        onAddAnother(
+                          {
+                            brand: g.brandLabel === "(no brand)" ? undefined : g.brandLabel,
+                            material: g.material as any,
+                            color: g.color,
+                            diameterMm: g.diameterMm as any,
+                            capacityG: g.spools[0]?.capacityG,
+                          },
+                          qty
+                        );
+                      }}
+                    >
+                      + Add
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </div>
-
             {/* Spool table */}
             <table className="table" style={{ marginTop: 6 }}>
               <thead>
@@ -79,7 +119,7 @@ export function InventoryList({ spools, onOpen }: Props) {
               </thead>
               <tbody>
                 {g.spools.map((s) => {
-                  const low = s.status === "ACTIVE" && s.remainingPct <= 10 && s.remainingG > 0;
+                  const low = s.status !== "EMPTY" && s.remainingPct <= 10 && s.remainingG > 0;
                   return (
                     <tr key={s.id} onClick={() => onOpen(s)} style={{ cursor: "pointer" }}>
                       <td>
@@ -94,8 +134,10 @@ export function InventoryList({ spools, onOpen }: Props) {
                           {low ? <span className="badge">low</span> : null}
                         </div>
                       </td>
-                      <td>
-                        <span className="badge">{s.status}</span>
+                      <td style={{ verticalAlign: "middle" }}>
+                        <div style={{ display: "flex", alignItems: "center", height: "100%" }}>
+                          <span className="badge">{s.status}</span>
+                        </div>
                       </td>
                     </tr>
                   );

@@ -8,12 +8,19 @@ import { InventoryList } from "./components/InventoryList";
 import { SpoolFormModal } from "./components/SpoolFormModal";
 import { SpoolDetailsModal } from "./components/SpoolDetailsModal";
 import { DataTools } from "./components/DataTools";
+import { Footer } from "./components/Footer";
+
+function canonicalName(brand: string | undefined, material: string, color: string) {
+  const b = (brand ?? "").trim();
+  const c = (color ?? "").trim();
+  return b ? `${b} ${material} - ${c}` : `${material} - ${c}`;
+}
 
 
 type Filters = {
   q: string;
   material: Material | "ALL";
-  status: "ALL" | "ACTIVE" | "EMPTY" | "ARCHIVED";
+  status: "ALL" | "IN_USE" | "IN_STORAGE" | "EMPTY";
 };
 
 export default function App() {
@@ -28,6 +35,10 @@ export default function App() {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editing, setEditing] = useState<Spool | null>(null);
+  const [prefill, setPrefill] = useState<Partial<Pick<Spool, "brand" | "material" | "color" | "diameterMm" | "capacityG">> | null>(null);
+  const [initialQty, setInitialQty] = useState<number>(1);
+
+
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selected, setSelected] = useState<Spool | null>(null);
@@ -48,7 +59,7 @@ export default function App() {
       })
       .sort((a, b) => {
         // Active first, then by lowest remaining
-        const rank = (s: Spool) => (s.status === "ACTIVE" ? 0 : s.status === "EMPTY" ? 1 : 2);
+        const rank = (s: Spool) =>  s.status === "IN_USE" ? 0 : s.status === "IN_STORAGE" ? 1 : 2;
         const ra = rank(a), rb = rank(b);
         if (ra !== rb) return ra - rb;
         return a.remainingPct - b.remainingPct;
@@ -77,18 +88,86 @@ export default function App() {
   const handleAdd = () => {
     setFormMode("create");
     setEditing(null);
+    setPrefill(null);
+    setInitialQty(1);
     setFormOpen(true);
   };
+
+  const handleAddAnother = (p: Partial<Pick<Spool, "brand" | "material" | "color" | "diameterMm" | "capacityG">>, qty = 1) => {
+  setFormMode("create");
+  setEditing(null);
+  setPrefill(p);
+  setFormOpen(true);
+  setInitialQty(Math.max(1, Math.floor(qty || 1)));
+};
+
 
   const handleOpenDetails = (spool: Spool) => {
     setSelected(spool);
     setDetailsOpen(true);
   };
 
-  const handleSaveSpool = (spool: Spool) => {
-    const next = upsertSpool(spools, spool);
-    persist(next);
+  const makeId = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   };
+  
+  function escapeRegex(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function nextNameIndex(spools: Spool[], baseName: string) {
+    const re = new RegExp(`^${escapeRegex(baseName)}\\s*#(\\d+)$`, "i");
+    let max = 0;
+
+    for (const s of spools) {
+      const m = (s.name || "").trim().match(re);
+      if (!m) continue;
+      const n = Number(m[1]);
+      if (Number.isFinite(n)) max = Math.max(max, n);
+    }
+    return max + 1;
+  }
+
+
+  const handleSaveSpool = (incoming: Spool, qty = 1) => {
+    const n = Math.max(1, Math.floor(qty || 1));
+    if (formMode === "edit") {
+      const next = data.spools.map((s) => (s.id === incoming.id ? incoming : s));
+      persist(next);
+      setFormOpen(false);
+      setEditing(null);
+      setPrefill(null);
+      return;
+    }
+    const now = new Date().toISOString();
+    const sameGroup = (s: Spool) =>
+      (s.brand ?? "") === (incoming.brand ?? "") &&
+      s.material === incoming.material &&
+      s.color === incoming.color &&
+      s.diameterMm === incoming.diameterMm;
+    const groupSpools = data.spools.filter(sameGroup);
+    const baseName = canonicalName(incoming.brand, incoming.material, incoming.color);
+    const shouldSuffix = baseName.length > 0; 
+    const startIndex = nextNameIndex(groupSpools, baseName);
+    const created: Spool[] = Array.from({ length: n }, (_, i) => ({
+      ...incoming,
+      id: makeId(),
+      createdAt: now,
+      updatedAt: now,
+      name: `${baseName} #${startIndex + i}`,
+    }));
+
+    persist([...created, ...data.spools]);
+
+    setFormOpen(false);
+    setEditing(null);
+    setPrefill(null);
+  };
+
+
 
   const handleUpdateSpool = (spool: Spool) => {
     const next = upsertSpool(spools, spool);
@@ -155,9 +234,9 @@ export default function App() {
               onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value as Filters["status"] }))}
             >
               <option value="ALL">All</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="EMPTY">EMPTY</option>
-              <option value="ARCHIVED">ARCHIVED</option>
+              <option value="IN_USE">In use</option>
+              <option value="IN_STORAGE">In Storage</option>
+              <option value="EMPTY">Empty</option>
             </select>
           </div>
         </div>
@@ -167,13 +246,20 @@ export default function App() {
         </div>
       </div>
 
-      <InventoryList spools={filtered} onOpen={handleOpenDetails} />
+      <InventoryList
+        spools={filtered}
+        onOpen={handleOpenDetails}
+        onAddAnother={handleAddAnother}
+      />
+
 
       <SpoolFormModal
         open={formOpen}
         mode={formMode}
         initial={editing}
-        onClose={() => setFormOpen(false)}
+        prefill={prefill}
+        initialQty={initialQty}
+        onClose={() => { setFormOpen(false); setPrefill(null); setInitialQty(1); }}
         onSave={handleSaveSpool}
       />
 
@@ -185,6 +271,7 @@ export default function App() {
         onDelete={handleDeleteSpool}
         onUpdate={handleUpdateSpool}
       />
+      <Footer />
     </div>
   );
 }

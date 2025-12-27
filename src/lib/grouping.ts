@@ -57,7 +57,7 @@ export function groupSpools(spools: Spool[]): SpoolGroup[] {
     spools: g.spools.slice().sort((a, b) => a.remainingPct - b.remainingPct),
   }));
 
-  const groupRank = (g: SpoolGroup) => (g.spools.some((s) => s.status === "ACTIVE") ? 0 : 1);
+  const groupRank = (g: SpoolGroup) => (g.spools.some((s) => s.status === "IN_USE") ? 0 : 1);
 
   groups.sort((a, b) => {
     const ra = groupRank(a), rb = groupRank(b);

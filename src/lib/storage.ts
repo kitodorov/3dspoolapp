@@ -6,15 +6,28 @@ export function loadData(): AppData {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return { version: 1, spools: [] };
+
     const parsed = JSON.parse(raw) as AppData;
     if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.spools)) {
       return { version: 1, spools: [] };
     }
+
+    // 🔹 Migrate old statuses
+    parsed.spools = parsed.spools.map((s: any) => {
+      let status = s.status as string;
+
+      if (status === "ACTIVE") status = "IN_STORAGE";
+      if (status === "ARCHIVED") status = "EMPTY";
+
+      return { ...s, status };
+    });
+
     return parsed;
   } catch {
     return { version: 1, spools: [] };
   }
 }
+
 
 export function saveData(data: AppData) {
   localStorage.setItem(KEY, JSON.stringify(data));
