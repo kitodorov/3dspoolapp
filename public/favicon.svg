@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="3D printer spool">
+  <title>3D printer spool</title>
+
+  <!-- Optional: adapt to dark/light tabs -->
+  <style>
+    :root { --c: #111; }
+    @media (prefers-color-scheme: dark) { :root { --c: #fff; } }
+  </style>
+
+  <!-- Outer flange -->
+  <circle cx="32" cy="32" r="22" fill="none" stroke="var(--c)" stroke-width="4"></circle>
+
+  <!-- Inner flange -->
+  <circle cx="32" cy="32" r="14" fill="none" stroke="var(--c)" stroke-width="4"></circle>
+
+  <!-- Hub hole -->
+  <circle cx="32" cy="32" r="6" fill="none" stroke="var(--c)" stroke-width="4"></circle>
+
+  <!-- Spoke / filament hint -->
+  <path d="M32 10v8M32 46v8M10 32h8M46 32h8" stroke="var(--c)" stroke-width="4" stroke-linecap="round"></path>
+
+  <!-- Small filament tail -->
+  <path d="M48 18c4 0 6 2 6 6s-2 6-6 6" fill="none" stroke="var(--c)" stroke-width="4" stroke-linecap="round"></path>
+</svg>

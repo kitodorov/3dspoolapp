@@ -6,7 +6,7 @@ import { BRANDS, COLORS } from "../config/options";
 import { ColorSwatch } from "./ColorSwatch";
 
 
-const MATERIALS: Material[] = ["PLA", "PETG", "ABS", "TPU", "ASA", "NYLON", "PC", "OTHER"];
+const MATERIALS: Material[] = ["PLA", "PLA Silk", "PLA Wood", "PLA Tough", "PETG", "ABS", "TPU", "ASA", "NYLON", "PC", "OTHER"];
 const STATUSES: { value: SpoolStatus; label: string }[] = [
   { value: "IN_USE", label: "In use (printer / AMS)" },
   { value: "IN_STORAGE", label: "In storage" },

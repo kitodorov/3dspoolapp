@@ -9,6 +9,10 @@ import { SpoolFormModal } from "./components/SpoolFormModal";
 import { SpoolDetailsModal } from "./components/SpoolDetailsModal";
 import { DataTools } from "./components/DataTools";
 import { Footer } from "./components/Footer";
+import type { Printer } from "./types/filament";
+import { upsertPrinter, removePrinter } from "./lib/storage";
+import { PrintersModal } from "./components/PrintersModal";
+
 
 function canonicalName(brand: string | undefined, material: string, color: string) {
   const b = (brand ?? "").trim();
@@ -37,14 +41,11 @@ export default function App() {
   const [editing, setEditing] = useState<Spool | null>(null);
   const [prefill, setPrefill] = useState<Partial<Pick<Spool, "brand" | "material" | "color" | "diameterMm" | "capacityG">> | null>(null);
   const [initialQty, setInitialQty] = useState<number>(1);
-
-
-
+  const [printersOpen, setPrintersOpen] = useState(false);
+  const printers = data.printers;
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selected, setSelected] = useState<Spool | null>(null);
-
   const spools = data.spools;
-
   const filtered = useMemo(() => {
     const q = filters.q.trim().toLowerCase();
 
@@ -70,6 +71,35 @@ export default function App() {
     const next = { ...data, spools: nextSpools };
     setData(next);
     saveData(next);
+  };
+
+  const persistData = (next: typeof data) => {
+  setData(next);
+  saveData(next);
+  };
+
+  const handleUpsertPrinter = (p: Printer) => {
+    const nextPrinters = upsertPrinter(printers, p);
+    persistData({ ...data, printers: nextPrinters });
+  };
+
+  const handleDeletePrinter = (id: string) => {
+    const nextPrinters = removePrinter(printers, id);
+
+    // unassign from spools (and optionally move to storage)
+    const nextSpools = data.spools.map((s) =>
+      s.printerId === id
+        ? { ...s, printerId: undefined, status: s.status === "IN_USE" ? "IN_STORAGE" : s.status }
+        : s
+    );
+
+    persistData({ ...data, printers: nextPrinters, spools: nextSpools });
+
+    if (selected && selected.printerId === id) {
+      setSelected((prev) =>
+        prev ? { ...prev, printerId: undefined, status: prev.status === "IN_USE" ? "IN_STORAGE" : prev.status } : prev
+      );
+    }
   };
 
 
@@ -216,6 +246,11 @@ export default function App() {
     <div className="container">
       <Header onAdd={handleAdd} />
       <DataTools data={data} onApply={handleApplyData} />
+      <div className="row" style={{ justifyContent: "flex-end", marginBottom: 12 }}>
+        <button className="btn" onClick={() => setPrintersOpen(true)}>
+          Manage Printers
+        </button>
+      </div>
       <div className="card" style={{ marginBottom: 12 }}>
         <div className="grid3">
           <div>
@@ -264,6 +299,7 @@ export default function App() {
 
       <InventoryList
         spools={filtered}
+        printers={data.printers}
         onOpen={handleOpenDetails}
         onAddAnother={handleAddAnother}
         onDeleteGroup={handleDeleteGroup}
@@ -283,10 +319,18 @@ export default function App() {
       <SpoolDetailsModal
         open={detailsOpen}
         spool={selected}
+        printers={data.printers}
         onClose={() => setDetailsOpen(false)}
         onEdit={handleEditFromDetails}
         onDelete={handleDeleteSpool}
         onUpdate={handleUpdateSpool}
+      />
+      <PrintersModal
+      open={printersOpen}
+      printers={printers}
+      onClose={() => setPrintersOpen(false)}
+      onUpsert={handleUpsertPrinter}
+      onDelete={handleDeletePrinter}
       />
       <Footer />
     </div>

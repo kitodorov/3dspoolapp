@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Spool } from "../types/filament";
+import type { Spool , Printer } from "../types/filament";
 import { syncRemainingFromG } from "../lib/utils";
 import { formatDate } from "../lib/utils";
 import { ColorSwatch } from "./ColorSwatch";
@@ -11,9 +11,10 @@ type Props = {
   onEdit: (spool: Spool) => void;
   onDelete: (id: string) => void;
   onUpdate: (spool: Spool) => void;
+  printers: Printer[];
 };
 
-export function SpoolDetailsModal({ open, spool, onClose, onEdit, onDelete, onUpdate }: Props) {
+export function SpoolDetailsModal({ open, spool, printers, onClose, onEdit, onDelete, onUpdate }: Props) {
   const [delta, setDelta] = useState<number>(50);
 
   useEffect(() => {
@@ -56,12 +57,13 @@ export function SpoolDetailsModal({ open, spool, onClose, onEdit, onDelete, onUp
   const now = new Date().toISOString();
 
   if (safe.status === "IN_STORAGE") {
-    onUpdate({ ...safe, status: "IN_USE", updatedAt: now });
+    const first = printers[0]?.id;
+    onUpdate({ ...safe, status: "IN_USE", printerId: safe.printerId ?? first, updatedAt: now });
     return;
   }
 
   if (safe.status === "IN_USE") {
-    onUpdate({ ...safe, status: "IN_STORAGE", updatedAt: now });
+    onUpdate({ ...safe, status: "IN_STORAGE", printerId: undefined, updatedAt: now });
     return;
   }
   };
@@ -132,6 +134,26 @@ export function SpoolDetailsModal({ open, spool, onClose, onEdit, onDelete, onUp
             <button className="btn danger" onClick={() => onDelete(safe.id)}>Delete</button>
           </div>
         </div>
+        
+        {safe.status === "IN_USE" ? (
+        <div style={{ marginTop: 10 }}>
+          <label className="subtle">Assigned printer</label>
+          <select
+            className="select"
+            value={safe.printerId ?? ""}
+            onChange={(e) => {
+              const now = new Date().toISOString();
+              const v = e.target.value || undefined;
+              onUpdate({ ...safe, printerId: v, updatedAt: now });
+            }}
+          >
+            <option value="">(no printer)</option>
+            {printers.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+        ) : null}
         {safe.notes ? (
           <div className="card" style={{ marginTop: 12 }}>
             <div style={{ fontWeight: 800, marginBottom: 6 }}>Notes</div>

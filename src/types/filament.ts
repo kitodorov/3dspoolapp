@@ -1,5 +1,8 @@
 export type Material =
   | "PLA"
+  | "PLA Silk"
+  | "PLA Wood"
+  | "PLA Tough"
   | "PETG"
   | "ABS"
   | "TPU"
@@ -32,9 +35,21 @@ export type Spool = {
 
   createdAt: string; // ISO
   updatedAt: string; // ISO
+
+  printerId?: string; // only used when status === "IN_USE"
 };
+
+export type Printer = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 
 export type AppData = {
   version: 1;
   spools: Spool[];
+  printers: Printer[];
 };
+

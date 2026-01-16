@@ -1,10 +1,13 @@
-import type { Spool } from "../types/filament";
+
 import { groupSpools } from "../lib/grouping";
 import { ColorSwatch } from "./ColorSwatch";
-import type { Material } from "../types/filament";
+import { useMemo } from "react";
+import type { Material, Printer, Spool } from "../types/filament";
+
 
 type Props = {
   spools: Spool[];
+  printers: Printer[];
   onOpen: (spool: Spool) => void;
   onDeleteGroup?: (key: GroupKey) => void;
   onAddAnother?: (
@@ -38,7 +41,16 @@ function pctBar(pct: number) {
   );
 }
 
-export function InventoryList({ spools, onOpen, onAddAnother, onDeleteGroup }: Props) {
+export function InventoryList({ spools, printers, onOpen, onAddAnother, onDeleteGroup }: Props) {
+
+
+  const printerNameById = useMemo(() => {
+  const m = new Map<string, string>();
+  for (const p of printers) m.set(p.id, p.name);
+  return m;
+  }, [printers]);
+
+  
   if (spools.length === 0) {
     return (
       <div className="card">
@@ -49,6 +61,8 @@ export function InventoryList({ spools, onOpen, onAddAnother, onDeleteGroup }: P
   }
 
   const groups = groupSpools(spools);
+  
+
 
   return (
     <div className="card">
@@ -149,6 +163,7 @@ export function InventoryList({ spools, onOpen, onAddAnother, onDeleteGroup }: P
                   <th>Spool</th>
                   <th>Remaining</th>
                   <th>Status</th>
+                  <th>Printer</th>
                 </tr>
               </thead>
               <tbody>
@@ -173,6 +188,16 @@ export function InventoryList({ spools, onOpen, onAddAnother, onDeleteGroup }: P
                           <span className="badge">{s.status}</span>
                         </div>
                       </td>
+                      <td style={{ verticalAlign: "middle" }}>
+                        {s.status === "IN_USE" ? (
+                          <span className="badge">
+                            {s.printerId ? (printerNameById.get(s.printerId) ?? "Unknown") : "Unassigned"}
+                          </span>
+                        ) : (
+                          <span className="subtle">—</span>
+                        )}
+                      </td>
+
                     </tr>
                   );
                 })}

@@ -1,4 +1,4 @@
-import type { AppData, Spool } from "../types/filament";
+import type { AppData, Spool, Printer } from "../types/filament";
 
 type Props = {
   data: AppData;
@@ -21,12 +21,42 @@ function downloadJson(filename: string, obj: unknown) {
 }
 
 function isValidAppData(x: any): x is AppData {
-  return x && typeof x === "object" && x.version === 1 && Array.isArray(x.spools);
+  return (
+    x &&
+    typeof x === "object" &&
+    x.version === 1 &&
+    Array.isArray(x.spools) &&
+    (x.printers === undefined || Array.isArray(x.printers))
+  );
 }
+
 
 function isValidSpoolLike(x: any): x is Spool {
   return x && typeof x === "object" && typeof x.id === "string" && x.id.trim().length > 0;
 }
+
+function isValidPrinterLike(x: any): x is Printer {
+  return x && typeof x === "object" && typeof x.id === "string" && x.id.trim().length > 0;
+}
+
+function mergePrintersById(existing: Printer[], incoming: Printer[]): Printer[] {
+  const map = new Map<string, Printer>();
+
+  for (const p of existing) {
+    if (isValidPrinterLike(p)) map.set(p.id, p);
+  }
+  for (const p of incoming) {
+    if (isValidPrinterLike(p)) map.set(p.id, p);
+  }
+
+  return Array.from(map.values()).sort((a, b) => {
+    const ta = Date.parse(a.updatedAt ?? a.createdAt ?? "") || 0;
+    const tb = Date.parse(b.updatedAt ?? b.createdAt ?? "") || 0;
+    return tb - ta;
+  });
+}
+
+
 
 /**
  * Merge with de-duplication by spool.id.
@@ -74,7 +104,7 @@ export function DataTools({ data, onApply }: Props) {
       const parsed = JSON.parse(text);
 
       if (!isValidAppData(parsed)) {
-        alert("Invalid backup file. Expected: { version: 1, spools: [...] }");
+        alert("Invalid backup file. Expected: { version: 1, spools: [...], printers?: [...] }");
         return;
       }
 
@@ -100,23 +130,34 @@ export function DataTools({ data, onApply }: Props) {
         );
         if (!ok) return;
 
-        onApply(parsed);
+        onApply({
+          version: 1,
+          spools: parsed.spools,
+          printers: parsed.printers ?? [],
+        });
+
         alert("Import complete (replaced).");
         return;
       }
 
       // Merge
       const mergedSpools = mergeById(data.spools, parsed.spools);
+      const filePrinters = parsed.printers ?? [];
+      const mergedPrinters = mergePrintersById(data.printers ?? [], filePrinters);
+
       const ok = confirm(
         `Merge will combine data and de-duplicate by id.\n\n` +
           `Current spools: ${data.spools.length}\n` +
           `File spools: ${parsed.spools.length}\n` +
           `Result spools: ${mergedSpools.length}\n\n` +
+          `Current printers: ${(data.printers ?? []).length}\n` +
+          `File printers: ${filePrinters.length}\n` +
+          `Result printers: ${mergedPrinters.length}\n\n` +
           `Continue?`
       );
       if (!ok) return;
 
-      onApply({ version: 1, spools: mergedSpools });
+      onApply({ version: 1, spools: mergedSpools, printers: mergedPrinters });
       alert("Import complete (merged).");
     } catch (err) {
       console.error(err);
